@@ -77,27 +77,43 @@ def read_environment_table(map_fhandler, foi_fhandler):
 		@hashtable_env (return) - correspondences between discrete variables and class affected (for instance male->1, female->0)
 	"""
 	obj, comm = parse_mapping_file_to_dict(map_fhandler)
-	site_names = obj.rowKeys()
-	environmental_param = []
-	is_continuous = []
-	for a_line in foi_fhandler:
-		param_name, param_type = a_line.split("\t") # /!\ Should check that we actually have a single tab (for nice software engineering)
-		environmental_param.append(param_name)
-		is_continuous.append(param_type == "C") # Here again some better check should be done (tolerate 'continuous', 'c', 'C', undefined?) or at least throw an exception
 
-	extracted_obj = obj.getCols(environmental_param)
-	
+
+	site_names = obj.rowKeys()
+	environmental_param_ = []
+	is_continuous = []
+	data_types = []
+	for a_line in foi_fhandler:
+		param_name, param_type, data_type = a_line.split("\t") # /!\ Should check that we actually have two tabs (for nice software engineering)
+		environmental_param_.append(param_name)
+		is_continuous.append(param_type.lower() == "c") # Here again some better check should be done (tolerate 'continuous', 'c', 'C', undefined?) or at least throw an exception
+		data_types.append(data_type)
+
+	extracted_obj = obj.getCols(environmental_param_)
+	environmental_param = extracted_obj.colKeys()
+
+	# Convert from Strings to whatever it should be! -> Should be able to do better
+	for idx, a_variable in enumerate(environmental_param_):
+
+		for a_site in site_names:
+			if extracted_obj[a_site][a_variable].lower() == "none":
+				extracted_obj[a_site][a_variable] = None # types.NoneType. ?
+			elif data_types[idx].lower() == "f":
+				extracted_obj[a_site][a_variable] = float(extracted_obj[a_site][a_variable])
+			elif data_types[idx].lower() == "i":
+				extracted_obj[a_site][a_variable] = int(extracted_obj[a_site][a_variable])
+
 
 	# Now for the discrete variables, we need to create the dictionaries/mapping from one value to a class assignment
 	hashtable_env = {}
 	for idx, value in enumerate(is_continuous):
-		nb_discrete = 0
+
 		if not value:
 			# Get all the different potential values
 			cur_col = []
 			
 			for a_sample in site_names:
-				cur_col.append(extracted_obj[a_sample][environmental_param[idx]])
+				cur_col.append(extracted_obj[a_sample][environmental_param_[idx]])
 
 
 
@@ -109,21 +125,23 @@ def read_environment_table(map_fhandler, foi_fhandler):
 			reverse_dict = {} # I'm pretty sure there is much better way to do that...
 			for a_class, a_value in enumerate(unique_values):
 				# Do some stuff
-				dict_hash[a_class] = a_value # Not sure that's the best way to do it
-				reverse_dict[a_value] = a_class
+				if a_value is not None:
+					dict_hash[a_class] = a_value # Not sure that's the best way to do it
+					reverse_dict[a_value] = a_class
 
 
 			# Convert the actual data in the data matrix to classes
 			for a_sample in site_names:
-				extracted_obj[a_sample][environmental_param[idx]] = reverse_dict[extracted_obj[a_sample][environmental_param[idx]]]
+				if extracted_obj[a_sample][environmental_param_[idx]] is not None:
+					extracted_obj[a_sample][environmental_param_[idx]] = reverse_dict[extracted_obj[a_sample][environmental_param_[idx]]]
 			
-			
-			nb_discrete = nb_discrete+1
 			# Add this new map in the environment dictionary
-			hashtable_env[environmental_param[idx]] = dict_hash
+			hashtable_env[environmental_param_[idx]] = dict_hash
+
 
 	# convert into a numpy array:
 	data_matrix = numpy.array(extracted_obj.toLists())
+
 	return data_matrix.transpose(), site_names, environmental_param, is_continuous, hashtable_env
 
 
@@ -160,7 +178,7 @@ def find_missing_data_locations(data_matrix):
 		@col_coordinates (return) - an array containing the cols of the different None values in the data matrix
 		@is_none (return) - a numpy ndarray containing True's wherever a none has been found
 	"""	
-	is_none = numpy.equal(data_matrix,None)
+	is_none = numpy.equal(data_matrix,None) # & numpy.equal(data_matrix,none)
 	itemidx = numpy.where(is_none == True)
 	return itemidx[0], itemidx[1], is_none
 
