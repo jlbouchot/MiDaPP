@@ -1,2 +1,2 @@
-Class	D
-SEX	D
+Class	D	T
+SEX	D	T
