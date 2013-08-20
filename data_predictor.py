@@ -32,12 +32,16 @@ def merge_matrices(data_matrix, env_table, site_names, site_names_env, variable_
 	# Merge the two site name lists.
 	complete_sites = list(Set(site_names_env).intersection(Set(site_names)))
 	# Get the index sets useful for both matrices
-	idx_env = []
-	for a_name in complete_sites: # There must be a faster and neater way to do this, but I have no idea how (and don't want to look for)
-		idx_env.append(site_names_env.index(a_name))
-	idx_biom = []
-	for a_name in complete_sites:
-		idx_biom.append(site_names.index(a_name))
+	#idx_env = []
+	idx_env = [site_names_env.index(a_name) for a_name in complete_sites]
+	idx_biom = [site_names.index(a_name) for a_name in complete_sites]
+
+	#for a_name in complete_sites: # There must be a faster and neater way to do this, but I have no idea how (and don't want to look for)
+	#	idx_env.append(site_names_env.index(a_name))
+	
+  #idx_biom = []
+	#for a_name in complete_sites:
+#		idx_biom.append(site_names.index(a_name))
 
 	# Extract AND ORDER submatrices with only the columns that are common to both of them 
 
