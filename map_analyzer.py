@@ -40,6 +40,14 @@ def print_info(opts):
     for k in o.keys():
       print "  " + k
 
+  # ---- print a column from the map file
+  if opts.print_col != None: 
+    s = set()
+    print "Column: " + opts.print_col + ": "
+    for k in o.keys():
+      s = s.union(set([o[k][opts.print_col]]))
+    for r in s:
+      print "  " + r
   return None 
 
 
@@ -61,7 +69,11 @@ if __name__ == "__main__":
     action = "store_true", 
     help = "Print sample IDs."
   )
-
+  parser.add_option("-d", "--print_col", 
+    dest = "print_col", 
+    default = None, 
+    help = "Print a column from the map file."
+  )
   (options, args) = parser.parse_args()
   if options.map == None:
     print "Map file not specified."
