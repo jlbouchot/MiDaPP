@@ -3,12 +3,29 @@
 import sys
 from qiime.parse import parse_mapping_file_to_dict
 
+
+__author__ = "Gregory Ditzler"
+__copyright__ = "Copyright 2013, EESI Lab"
+__credits__ = ["Gregory Ditzler"]
+__license__ = "GPL"
+__version__ = "0.1.0-dev"
+__maintainer__ = "Gregory Ditzler"
+__email__ = "gregory.ditzler@gmail.com"
+__status__ = "Development"
+
+
 def print_info(opts):
+  """
+  @opt: options from the command line. see --help
+  """
+  # import the the data using qiimes utilities. the o variable 
+  # contains the dictionary with the map file contents. 
   try:
     o,c = parse_mapping_file_to_dict(open(opts.map))
   except IOError:  
     raise("File may not exist. ")
 
+  # ---- print the metadata
   if opts.print_meta: 
     s = set()
     print "Meta-Data: "
@@ -16,6 +33,8 @@ def print_info(opts):
       s = s.union(set(o[k].keys()))
     for r in s: 
       print "  " + r 
+
+  # ---- print the sample IDs
   if opts.print_ids: 
     print "SampleIDs: "
     for k in o.keys():
