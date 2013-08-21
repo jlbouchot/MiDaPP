@@ -32,19 +32,9 @@ def merge_matrices(data_matrix, env_table, site_names, site_names_env, variable_
 	# Merge the two site name lists.
 	complete_sites = list(Set(site_names_env).intersection(Set(site_names)))
 	# Get the index sets useful for both matrices
-	#idx_env = []
 	idx_env = [site_names_env.index(a_name) for a_name in complete_sites]
 	idx_biom = [site_names.index(a_name) for a_name in complete_sites]
-
-	#for a_name in complete_sites: # There must be a faster and neater way to do this, but I have no idea how (and don't want to look for)
-	#	idx_env.append(site_names_env.index(a_name))
-	
-  #idx_biom = []
-	#for a_name in complete_sites:
-#		idx_biom.append(site_names.index(a_name))
-
 	# Extract AND ORDER submatrices with only the columns that are common to both of them 
-
 	# Merge these two submatrices
 	complete_matrix = numpy.vstack((data_matrix[:,idx_biom],env_table[:,idx_env])) # make sure the data type coincide
 	return complete_matrix, complete_sites, variable_names.extend(environmental_param)
@@ -61,10 +51,7 @@ def biom_table_to_array(biom_table):
 	site_names = list(biom_table.SampleIds)
 	variable_names = list(biom_table.ObservationIds)
 	data_matrix = [] # Maybe need to use a numpy.ndarray... Or we could have something like 
-	# data_matrix = numpy.ndarray((biom_table['shape'])) but don't know how to use this.
-	for one_observation in biom_table.iterObservationData(): # Observations correspond to what we call variables or features (is that true?)
-		data_matrix.append(one_observation)
-
+	data_matrix = [o for o in biom_table.iterObservationData()] 
 	return numpy.array(data_matrix), site_names, variable_names
 		
 
