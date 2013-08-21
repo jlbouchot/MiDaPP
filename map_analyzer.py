@@ -3,7 +3,6 @@
 import sys
 from qiime.parse import parse_mapping_file_to_dict
 
-
 __author__ = "Gregory Ditzler"
 __copyright__ = "Copyright 2013, EESI Lab"
 __credits__ = ["Gregory Ditzler"]
