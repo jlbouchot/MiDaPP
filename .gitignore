@@ -1,5 +1,7 @@
 *.py[cod]
 emp/emp.html
+emp/biom/
+emp/maps/
 
 # C extensions
 *.so
