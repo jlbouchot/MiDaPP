@@ -9,7 +9,7 @@
 # bash script. 
 
 grep '<a href="ftp://thebeast.colorado.edu/pub/QIIME_DB_Public_Studies/study' emp.html \
-  | sed -e "s/.*Studies\/\(.*.tgz\)/\1/g" -e "s/\">/ /g" -e "s/<.*$//g" \
+  | sed -e "s/.*Studies\/\(.*.*\)/\1/g" -e "s/\">/ /g" -e "s/<.*$//g" \
   | awk '{print $2,$1}' \
   > emp-descriptions.txt
 
