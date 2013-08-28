@@ -22,11 +22,11 @@ shift
 declare -A bfiles
 declare -A mfiles
 for arg in ${@}; do
-  bfiles[$arg]=$bpath/study_${arg}_closed_reference_otu_table.biom
-  mfiles[$arg]=$mpath/study_${arg}_mapping_file.txt
+  bfiles["$arg"]=$bpath/study_${arg}_closed_reference_otu_table.biom
+  mfiles["$arg"]=$mpath/study_${arg}_mapping_file.txt
 done
 bioms=`echo ${bfiles[@]} | tr " " ","`
 maps=`echo ${mfiles[@]} | tr " " ","`
 
-# merge_mapping_files.py -m $maps -o $npath.txt
-# merge_otu_tables.py -i $bioms -o $npath.biom
+echo "merge_mapping_files.py -m $maps -o $npath.txt"
+echo "merge_otu_tables.py -i $bioms -o $npath.biom"
