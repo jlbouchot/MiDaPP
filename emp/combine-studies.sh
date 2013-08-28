@@ -28,5 +28,5 @@ done
 bioms=`echo ${bfiles[@]} | tr " " ","`
 maps=`echo ${mfiles[@]} | tr " " ","`
 
-echo "merge_mapping_files.py -m $maps -o $npath.txt"
-echo "merge_otu_tables.py -i $bioms -o $npath.biom"
+merge_mapping_files.py -m $maps -o $npath.txt
+merge_otu_tables.py -i $bioms -o $npath.biom
