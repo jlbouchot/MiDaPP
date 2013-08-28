@@ -2,6 +2,7 @@
 emp/emp.html
 emp/biom/
 emp/maps/
+tmp/
 
 # C extensions
 *.so
