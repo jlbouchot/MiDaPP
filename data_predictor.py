@@ -1,9 +1,15 @@
 # File created on 22 July 2013
 import numpy
+
+import sys # Useful for imports from different folders
+
 from biom.parse import parse_biom_table 
 from qiime.parse import parse_mapping_file_to_dict
 from sets import Set
 
+#sys.path.insert(0, '~/dev/emp-tests/tests/SparCCtb/lib')
+
+#import SurveyMatrix as SM
 
 __author__ = "Jean-Luc Bouchot"
 __copyright__ = "Copyright 2011, The QIIME project"
@@ -182,8 +188,8 @@ def find_missing_data_locations(data_matrix):
 		@is_none (return) - a numpy ndarray containing True's wherever a none has been found
 	"""	
 	is_none = numpy.equal(data_matrix,None) # & numpy.equal(data_matrix,none)
-	is_nan = numpy.isnan(data_matrix)
-	is_none = numpy.logical_or(is_none, is_nan)
+	#is_nan = numpy.isnan(data_matrix)
+	#is_none = numpy.logical_or(is_none, is_nan)
 	itemidx = numpy.where(is_none == True)
 	return itemidx[0], itemidx[1], is_none
 
@@ -243,3 +249,26 @@ def create_random_unknown_mask(data_matrix, from_rows, missing_ratio):
 				new_matrix[one_row,one_col] = None
 
 	return row_none, col_none, unknown_mask, new_matrix
+
+#def get_sparCC_correlation(data_matrix, row_names, col_names, nb_otus):
+#		"""
+#		get_sparCC_correlation(data_matrix, row_names, col_names)
+#		@data_matrix - the matrix organised such that data_matrix[r][c] corresponds to feature r in site c - It should correspond to the "complete" matrix (i.e. with both -omics information and environment)
+#		@row_names  - a list of names for each features
+#		@col_names - a list of site names
+#		@nb_otus - an integer counting the number of -omics information
+#		@row_none (return) - a list of row numbers where to find a (artificial) missing measure
+#		@col_none (return) - the same list as above but containing the column numbers
+#		@unknown_mask (return) - a numpy ndarray containing True if at the location of unknown data
+#		@new_matrix (return) - a copy of the data matrix with nones at the random locations given by the unkwnon mask
+#	"""	
+#	sparCC_matrix = SM()
+#	sparCC_matrix.from_matrix(data_matrix, row_labels = row_names, col_labels = col_names)
+#
+#	# Do the log transform on the compositional data only
+#	fracs = comp_fractions(counts) # Add the parameter handling from this function
+#
+#	# Merge with the environmental data
+#
+#	# Actually calculate the correlation (Might want to be lazy: correlation matrix will be symetric and 1s on the diagonal)
+#
