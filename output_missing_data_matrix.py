@@ -16,10 +16,10 @@ __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
-i = 0;
 def save_desired_features(mapping_file, foi_file, output_file):
 		features = []
 		missing_data_dic = {}
+		output_array = []
 		output_fh = open(output_file, 'w');
 
 		with open(foi_file, 'r') as fh:
@@ -41,15 +41,29 @@ def save_desired_features(mapping_file, foi_file, output_file):
 				for i, col in enumerate(columns):
 						missing_data_dic[sample_name][headers[i]] = col 
 
-		for sample in missing_data_dic.keys():
-			output_fh.write(sample + "\t")
+		# for each sample, add our desired data to an array
+		for x, sample in enumerate(missing_data_dic.keys()):
+			output_array.append([])
+			output_array[x].append(sample)
+
+			# for each desired feature, add it from the missing_data_dictionary
 			for desired_feature in features:
-				desired_feature = desired_feature[0]
 				for sample_feature in missing_data_dic[sample].keys():
-					if sample_feature == desired_feature:
-						output_fh.write(missing_data_dic[sample][sample_feature])
-						output_fh.write("\t")
-			output_fh.write("\n")
+
+					# if our feauture matches, parse it in
+					if sample_feature == desired_feature[0]:
+						value = missing_data_dic[sample][sample_feature]
+
+						if value.lower() == "none":
+							value = None # types.NoneType. ?
+						elif desired_feature[2].lower() == "f":
+							value = float(value)
+						elif desired_feature[2].lower() == "i":
+							value = int(value)
+					
+						output_array[x].append(value)
+
+		pdb.set_trace()
 
 
 def main():
