@@ -1,4 +1,3 @@
-
 from biom.parse import parse_biom_table 
 
 import argparse
@@ -17,6 +16,42 @@ __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
+i = 0;
+def save_desired_features(mapping_file, foi_file, output_file):
+		features = []
+		missing_data_dic = {}
+		output_fh = open(output_file, 'w');
+
+		with open(foi_file, 'r') as fh:
+			for i,row in enumerate(fh):
+				features.append(row[:-1].split("\t"))
+
+		with open(mapping_file, 'r') as fh:
+
+			header_line = fh.readline()	
+			headers = header_line[1:-1].split("\t")
+
+			for row in fh:
+				columns = row.split("\t")
+				sample_name =	columns[0]
+
+				if sample_name not in missing_data_dic:
+					missing_data_dic[sample_name] = {}
+
+				for i, col in enumerate(columns):
+						missing_data_dic[sample_name][headers[i]] = col 
+
+		for sample in missing_data_dic.keys():
+			output_fh.write(sample + "\t")
+			for desired_feature in features:
+				desired_feature = desired_feature[0]
+				for sample_feature in missing_data_dic[sample].keys():
+					if sample_feature == desired_feature:
+						output_fh.write(missing_data_dic[sample][sample_feature])
+						output_fh.write("\t")
+			output_fh.write("\n")
+
+
 def main():
 		parser = argparse.ArgumentParser(description = "")
 		parser.add_argument("-i", "--biom-file", help="An input biom file", required=True)
@@ -31,27 +66,26 @@ def main():
 
 		args = parser.parse_args()
 
-		data_matrix, site_names, variable_names, environmental_param, hashtable_env \
-		= data_predictor.create_fused_data_matrix(args.biom_file, args.mapping_file, args.feature_of_interest_file)
-
 		# if our folder doesn't exist create it
 		if not os.path.isdir(args.output_folder):
 			os.mkdir(args.output_folder);
 
-		# output our data matrix
-		if args.output_type == "csv":
-			numpy.savetxt(args.output_folder + "/biom_data_matrix.csv", data_matrix, delimiter="\t", fmt="%f")
-		elif args.output_type == "numpy":
-			numpy.save(args.output_folder + "/biom_data_matrix.npy", data_matrix, delimiter="\t")
-		elif args.output_type == "matlab":
-			import scipy.io
-			dic = {}
-			dic['matrix'] = data_matrix
-			scipy.io.savemat(args.output_folder + "/biom_data_matrix.mat", dic)
-		else:
-			print "unknown output type"
+		save_desired_features(args.mapping_file, args.feature_of_interest_file, args.output_folder + "/desired_features.csv");
 
-		pdb.set_trace()
+		# output our data matrix
+		# if args.output_type == "csv":
+		# 	numpy.savetxt(args.output_folder + "/biom_data_matrix.csv", data_matrix, delimiter="\t", fmt="%f")
+		# elif args.output_type == "numpy":
+		# 	numpy.save(args.output_folder + "/biom_data_matrix.npy", data_matrix, delimiter="\t")
+		# elif args.output_type == "matlab":
+		# 	import scipy.io
+		# 	dic = {}
+		# 	dic['matrix'] = data_matrix
+		# 	scipy.io.savemat(args.output_folder + "/biom_data_matrix.mat", dic)
+		# elif args.output_type == "r":
+		#  	print "R is unsupported"	
+		# else:
+		# 	print "unknown output type"
 
 
 if __name__ == "__main__":
