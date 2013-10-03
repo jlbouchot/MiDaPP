@@ -63,7 +63,6 @@ def save_desired_features(mapping_file, foi_file, output_file):
 					
 						output_array[x].append(value)
 
-		pdb.set_trace()
 
 
 def main():
