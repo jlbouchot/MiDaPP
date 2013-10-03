@@ -17,17 +17,19 @@ __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
 def save_desired_features(mapping_file, foi_file, output_file):
-		features = []
+		features = {}
 		missing_data_dic = {}
 		output_array = []
 		output_fh = open(output_file, 'w');
 
 		with open(foi_file, 'r') as fh:
 			for i,row in enumerate(fh):
-				features.append(row[:-1].split("\t"))
+				split_row = row[:-1].split("\t")
+				features[split_row[0]] = {}
+				features[split_row[0]]['discrete'] = split_row[1]
+				features[split_row[0]]['type'] = split_row[2]
 
 		with open(mapping_file, 'r') as fh:
-
 			header_line = fh.readline()	
 			headers = header_line[1:-1].split("\t")
 
@@ -42,16 +44,21 @@ def save_desired_features(mapping_file, foi_file, output_file):
 						missing_data_dic[sample_name][headers[i]] = col 
 
 		# for each sample, add our desired data to an array
-		for x, sample in enumerate(missing_data_dic.keys()):
+		output_array.append([])
+		output_array[0].append("Sample")
+		for feature in features:
+			output_array[0].append(feature)
+
+		for x, sample in list(enumerate(missing_data_dic.keys()))[1:]:
 			output_array.append([])
 			output_array[x].append(sample)
 
 			# for each desired feature, add it from the missing_data_dictionary
-			for desired_feature in features:
+			for desired_feature in features.keys():
 				for sample_feature in missing_data_dic[sample].keys():
 
 					# if our feauture matches, parse it in
-					if sample_feature == desired_feature[0]:
+					if sample_feature == desired_feature:
 						value = missing_data_dic[sample][sample_feature]
 
 						if value.lower() == "none":
@@ -63,6 +70,24 @@ def save_desired_features(mapping_file, foi_file, output_file):
 					
 						output_array[x].append(value)
 
+		# transpose our output array
+		output_array = map(list, zip(*output_array))
+
+		# replace our value which are supposed to be discete with descrete values
+		for feature in output_array[1:]: 
+			if(features[feature[0]]['discrete'] == "discrete"):
+				i = 0
+				obs_dic = {}
+				for obs in feature[1:]:
+					if(obs not in obs_dic):
+						obs_dic[obs] = i
+						i = i + 1
+
+				for x,obs in enumerate(feature[1:]):
+					if feature[x] is not None:
+						feature[x] = obs_dic[obs]
+
+		pdb.set_trace()
 
 
 def main():
