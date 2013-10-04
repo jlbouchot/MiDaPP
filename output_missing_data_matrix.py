@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import argparse
+from biom.parse import parse_biom_table 
 import numpy
 import os
 import sys
@@ -14,6 +15,38 @@ __version__ = "0.1.0-dev"
 __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
+
+def save_biom_matrix(input_file, output_file):
+
+	with open(input_file, 'r') as ih:
+		with open(output_file, 'w') as oh:
+			biom_table = parse_biom_table(ih)
+			matrix, site_names, variable_names = biom_table_to_array(biom_table)
+			oh.write("Samples\t")
+			for x in xrange(len(matrix[0])):
+				oh.write(site_names[x] + "\t")
+			oh.write("\n")
+			for x in xrange(len(matrix)):
+				oh.write(variable_names[x] + "\t")
+				for y in xrange(len(matrix[x])):
+					oh.write(str(matrix[x][y]) + "\t")
+				oh.write("\n")
+		
+def biom_table_to_array(biom_table):
+	"""
+		biom_table_to_array(biom_table)
+		@biom_table - BIOM dictionary obtained using the biom parser
+		@data_matrix (return) - numpy matrix containing the data: per row: a certain feature, per column: a certain site/sample
+		@site_names (return) - name or key to the different sites
+		@variable_names (return) - name of the feature used (for instance k-mers/OTUs counts)
+	"""
+	site_names = list(biom_table.SampleIds)
+	variable_names = list(biom_table.ObservationIds)
+	data_matrix = [] 
+	data_matrix = [o for o in biom_table.iterObservationData()] 
+	return data_matrix, site_names, variable_names
+		
+
 
 def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 		features = {}
@@ -85,9 +118,7 @@ def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 						obs_dic[feature[0]][obs] = i
 						i = i + 1
 				for x in xrange(1,len(feature)):
-					print str(x) + "\t" + str(feature[x]) 
 					feature[x] = obs_dic[feature[0]][feature[x]]
-					print feature[x]
 
 		# write our observation dictionary out
 		with open(discrete_file, 'w') as fh:
@@ -117,7 +148,6 @@ def main():
 		parser.add_argument("-o", "--output-folder", help="The folder to output our data to", required=True)
 		parser.add_argument("-t", "--output-type", help="data output format. default: CSV options: csv, matlab, r, numpy", default="csv", required=False)
 
-
 		args = parser.parse_args()
 
 		# if our folder doesn't exist create it
@@ -127,7 +157,9 @@ def main():
 		save_desired_features(args.mapping_file,
 													args.feature_of_interest_file,
 													args.output_folder + "/desired_features.csv",
-													args.output_folder + "/discrete_feature_mapping.csv");
+													args.output_folder + "/discrete_feature_mapping.csv")
+
+		save_biom_matrix(args.biom_file, args.output_folder + "/data_matrix.csv")
 
 		# output our data matrix
 		# if args.output_type == "csv":
