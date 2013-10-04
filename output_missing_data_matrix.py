@@ -1,4 +1,4 @@
-from biom.parse import parse_biom_table 
+#!/usr/bin/python
 
 import argparse
 import data_predictor
@@ -16,11 +16,12 @@ __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
-def save_desired_features(mapping_file, foi_file, output_file):
+def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 		features = {}
 		missing_data_dic = {}
 		output_array = []
-		output_fh = open(output_file, 'w');
+
+		output_discrete_fh = open(discrete_file, 'w');
 
 		with open(foi_file, 'r') as fh:
 			for i,row in enumerate(fh):
@@ -74,19 +75,37 @@ def save_desired_features(mapping_file, foi_file, output_file):
 		output_array = map(list, zip(*output_array))
 
 		# replace our value which are supposed to be discete with descrete values
-		for feature in output_array[1:]: 
+		obs_dic = {}
+		for f, feature in list(enumerate(output_array[1:]))[1:]:
 			if(features[feature[0]]['discrete'] == "discrete"):
+
+				obs_dic[feature[0]] = {}
 				i = 0
-				obs_dic = {}
 				for obs in feature[1:]:
-					if(obs not in obs_dic):
-						obs_dic[obs] = i
+					if(obs not in obs_dic[feature[0]]):
+						obs_dic[feature[0]][obs] = i
 						i = i + 1
+				for x,obs in list(enumerate(feature[1:])):
+					if(x == 0):
+						continue;
+					print str(x) + "\t" + str(feature[x]) 
+					feature[x] = obs_dic[feature[0]][obs]
+					print feature[x]
+		# write our observation dictionary out
+		with open(discrete_file, 'w') as fh:
+				
+			fh.write("#KEY\tMAPPED NUMBER\tORIGINAL VALUE\n")
+			for m in obs_dic.keys():
+				for i in obs_dic[m].items():
+					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
 
-				for x,obs in enumerate(feature[1:]):
-					if feature[x] is not None:
-						feature[x] = obs_dic[obs]
 
+		output_array = map(list, zip(*output_array))
+		with open(output_file, 'w') as fh:
+			for row in output_array:
+				for col in row[:-1]:
+					fh.write(str(col) + "\t")
+				fh.write(str(row[len(row) - 1]) + "\n")
 		pdb.set_trace()
 
 
@@ -108,7 +127,10 @@ def main():
 		if not os.path.isdir(args.output_folder):
 			os.mkdir(args.output_folder);
 
-		save_desired_features(args.mapping_file, args.feature_of_interest_file, args.output_folder + "/desired_features.csv");
+		save_desired_features(args.mapping_file,
+													args.feature_of_interest_file,
+													args.output_folder + "/desired_features.csv",
+													args.output_folder + "/discrete_feature_mapping.csv");
 
 		# output our data matrix
 		# if args.output_type == "csv":
