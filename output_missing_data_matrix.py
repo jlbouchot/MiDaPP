@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 import argparse
-import data_predictor
 import numpy
 import os
 import sys
@@ -85,16 +84,15 @@ def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 					if(obs not in obs_dic[feature[0]]):
 						obs_dic[feature[0]][obs] = i
 						i = i + 1
-				for x,obs in list(enumerate(feature[1:])):
-					if(x == 0):
-						continue;
+				for x in xrange(1,len(feature)):
 					print str(x) + "\t" + str(feature[x]) 
-					feature[x] = obs_dic[feature[0]][obs]
+					feature[x] = obs_dic[feature[0]][feature[x]]
 					print feature[x]
+
 		# write our observation dictionary out
 		with open(discrete_file, 'w') as fh:
 				
-			fh.write("#KEY\tMAPPED NUMBER\tORIGINAL VALUE\n")
+			fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
 			for m in obs_dic.keys():
 				for i in obs_dic[m].items():
 					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
@@ -106,7 +104,6 @@ def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 				for col in row[:-1]:
 					fh.write(str(col) + "\t")
 				fh.write(str(row[len(row) - 1]) + "\n")
-		pdb.set_trace()
 
 
 def main():
