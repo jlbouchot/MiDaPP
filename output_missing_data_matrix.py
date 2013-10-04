@@ -49,6 +49,26 @@ def biom_table_to_array(biom_table):
 
 
 def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
+
+		output_array, obs_dic = load_desired_features(mapping_file, foi_file, output_file, discrete_file)
+
+		# write our observation dictionary out
+		with open(discrete_file, 'w') as fh:
+				
+			fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
+			for m in obs_dic.keys():
+				for i in obs_dic[m].items():
+					if(i[0] is not None):
+						fh.write(m + "\t" + str(i[1]) + "\t" + str(i[0]) + "\n")
+
+		output_array = map(list, zip(*output_array))
+		with open(output_file, 'w') as fh:
+			for row in output_array:
+				for col in row[:-1]:
+					fh.write(str(col) + "\t")
+				fh.write(str(row[len(row) - 1]) + "\n")
+
+def load_desired_features(mapping_file, foi_file, output_file, discrete_file):
 		features = {}
 		missing_data_dic = {}
 		output_array = []
@@ -118,23 +138,10 @@ def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 						obs_dic[feature[0]][obs] = i
 						i = i + 1
 				for x in xrange(1,len(feature)):
-					feature[x] = obs_dic[feature[0]][feature[x]]
+					if(feature[x] is not None):
+						feature[x] = obs_dic[feature[0]][feature[x]]
 
-		# write our observation dictionary out
-		with open(discrete_file, 'w') as fh:
-				
-			fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
-			for m in obs_dic.keys():
-				for i in obs_dic[m].items():
-					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
-
-
-		output_array = map(list, zip(*output_array))
-		with open(output_file, 'w') as fh:
-			for row in output_array:
-				for col in row[:-1]:
-					fh.write(str(col) + "\t")
-				fh.write(str(row[len(row) - 1]) + "\n")
+		return output_array, obs_dic
 
 
 def main():
