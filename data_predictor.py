@@ -2,6 +2,7 @@
 import numpy
 from biom.parse import parse_biom_table 
 from qiime.parse import parse_mapping_file_to_dict
+
 from sets import Set
 
 
@@ -14,6 +15,23 @@ __maintainer__ = "Jean-Luc Bouchot"
 __email__ = "jean-luc.bouchot@drexel.edu"
 __status__ = "Development"
 
+
+def parse_mapping_file_to_dict_alt(fh):
+		
+	header_line = fh.readline()	
+	headers = header_line[1:-1].split("\t")
+
+	dic = {}
+	for row in fh:
+		columns = row.split("\t")
+
+		for i, col in enumerate(columns):
+			if columns[0] not in dic:
+				dic[columns[0]] = {}
+			dic[columns[0]][headers[i]] = col 
+
+	return dic
+		
 
 def merge_matrices(data_matrix, env_table, site_names, site_names_env, variable_names, environmental_param):
 	"""
@@ -58,24 +76,30 @@ def biom_table_to_array(biom_table):
 
 def read_environment_table(map_fhandler, foi_fhandler):
 	"""
-		read_environment_table(map_fname, foi_fname)
+
 		@map_fhandler - file handler to the mapping .txt tab delimited file
-		@foi_fhandler - file handler to the tab delimited text file containing two columns: the first one contains the keys to the important environmental factors, and the second column contains whether the variables is continuous (e.g. temperature) or discrete (male/female)
+
+		@foi_fhandler - file handler to the tab delimited text file containing two
+		columns: the first one contains the keys to the important environmental
+		factors, and the second column contains whether the variables is continuous
+		(e.g. temperature) or discrete (male/female)
+
 		@data_matrix (return) - dense matrix containing both OTU/k-mer data AND environmental data
 		@site_names (return) - names of the different samples
 		@environmental_param (return) - names of the environmental parameters (as used in the foi_fname)
 		@is_continuous (return) - vector containing whether a particular foi is continuous or not
 		@hashtable_env (return) - correspondences between discrete variables and class affected (for instance male->1, female->0)
 	"""
-	obj, comm = parse_mapping_file_to_dict(map_fhandler)
 
+	obj, comm = parse_mapping_file_to_dict(map_fhandler)
 
 	site_names = obj.rowKeys()
 	environmental_param_ = []
 	is_continuous = []
 	data_types = []
 	for a_line in foi_fhandler:
-		param_name, param_type, data_type = a_line.split("\t") # /!\ Should check that we actually have two tabs (for nice software engineering)
+		# /!\ Should check that we actually have two tabs (for nice software engineering)
+		param_name, param_type, data_type = a_line.split("\t") 
 		environmental_param_.append(param_name)
 		is_continuous.append(param_type.lower() == "c") # Here again some better check should be done (tolerate 'continuous', 'c', 'C', undefined?) or at least throw an exception
 		data_types.append(data_type)

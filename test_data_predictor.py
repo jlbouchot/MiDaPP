@@ -2,9 +2,10 @@
 import data_predictor
 
 
-biom_fname = "../../study_550_closed_reference_otu_table.biom"
-map_fname = "study_550_mapping_file.txt"
-foi_fname = "feature_of_interest_study_550.txt"
+
+biom_fname ="~/mount/study550/study_550_closed_reference_otu_table.biom"
+map_fname = "~/mount/study550/study_550_mapping_file.txt"
+foi_fname = "~/mount/study550/feature_of_interest_study_550.txt"
 
 data_matrix, site_names, variable_names, environmental_param, hashtable_env = data_predictor.create_fused_data_matrix(biom_fname, map_fname, foi_fname)
 
