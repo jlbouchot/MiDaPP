@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-import data_predictor
+from biom.parse import parse_biom_table 
 import numpy
 import os
 import sys
@@ -16,7 +16,59 @@ __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
+def save_biom_matrix(input_file, output_file):
+
+	with open(input_file, 'r') as ih:
+		with open(output_file, 'w') as oh:
+			biom_table = parse_biom_table(ih)
+			matrix, site_names, variable_names = biom_table_to_array(biom_table)
+			oh.write("Samples\t")
+			for x in xrange(len(matrix[0])):
+				oh.write(site_names[x] + "\t")
+			oh.write("\n")
+			for x in xrange(len(matrix)):
+				oh.write(variable_names[x] + "\t")
+				for y in xrange(len(matrix[x])):
+					oh.write(str(matrix[x][y]) + "\t")
+				oh.write("\n")
+		
+def biom_table_to_array(biom_table):
+	"""
+		biom_table_to_array(biom_table)
+		@biom_table - BIOM dictionary obtained using the biom parser
+		@data_matrix (return) - numpy matrix containing the data: per row: a certain feature, per column: a certain site/sample
+		@site_names (return) - name or key to the different sites
+		@variable_names (return) - name of the feature used (for instance k-mers/OTUs counts)
+	"""
+	site_names = list(biom_table.SampleIds)
+	variable_names = list(biom_table.ObservationIds)
+	data_matrix = [] 
+	data_matrix = [o for o in biom_table.iterObservationData()] 
+	return data_matrix, site_names, variable_names
+		
+
+
 def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
+
+		output_array, obs_dic = load_desired_features(mapping_file, foi_file, output_file, discrete_file)
+
+		# write our observation dictionary out
+		with open(discrete_file, 'w') as fh:
+				
+			fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
+			for m in obs_dic.keys():
+				for i in obs_dic[m].items():
+					if(i[0] is not None):
+						fh.write(m + "\t" + str(i[1]) + "\t" + str(i[0]) + "\n")
+
+		output_array = map(list, zip(*output_array))
+		with open(output_file, 'w') as fh:
+			for row in output_array:
+				for col in row[:-1]:
+					fh.write(str(col) + "\t")
+				fh.write(str(row[len(row) - 1]) + "\n")
+
+def load_desired_features(mapping_file, foi_file, output_file, discrete_file):
 		features = {}
 		missing_data_dic = {}
 		output_array = []
@@ -85,28 +137,11 @@ def save_desired_features(mapping_file, foi_file, output_file, discrete_file):
 					if(obs not in obs_dic[feature[0]]):
 						obs_dic[feature[0]][obs] = i
 						i = i + 1
-				for x,obs in list(enumerate(feature[1:])):
-					if(x == 0):
-						continue;
-					print str(x) + "\t" + str(feature[x]) 
-					feature[x] = obs_dic[feature[0]][obs]
-					print feature[x]
-		# write our observation dictionary out
-		with open(discrete_file, 'w') as fh:
-				
-			fh.write("#KEY\tMAPPED NUMBER\tORIGINAL VALUE\n")
-			for m in obs_dic.keys():
-				for i in obs_dic[m].items():
-					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
+				for x in xrange(1,len(feature)):
+					if(feature[x] is not None):
+						feature[x] = obs_dic[feature[0]][feature[x]]
 
-
-		output_array = map(list, zip(*output_array))
-		with open(output_file, 'w') as fh:
-			for row in output_array:
-				for col in row[:-1]:
-					fh.write(str(col) + "\t")
-				fh.write(str(row[len(row) - 1]) + "\n")
-		pdb.set_trace()
+		return output_array, obs_dic
 
 
 def main():
@@ -120,7 +155,6 @@ def main():
 		parser.add_argument("-o", "--output-folder", help="The folder to output our data to", required=True)
 		parser.add_argument("-t", "--output-type", help="data output format. default: CSV options: csv, matlab, r, numpy", default="csv", required=False)
 
-
 		args = parser.parse_args()
 
 		# if our folder doesn't exist create it
@@ -130,7 +164,9 @@ def main():
 		save_desired_features(args.mapping_file,
 													args.feature_of_interest_file,
 													args.output_folder + "/desired_features.csv",
-													args.output_folder + "/discrete_feature_mapping.csv");
+													args.output_folder + "/discrete_feature_mapping.csv")
+
+		save_biom_matrix(args.biom_file, args.output_folder + "/data_matrix.csv")
 
 		# output our data matrix
 		# if args.output_type == "csv":
