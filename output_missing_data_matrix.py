@@ -5,7 +5,7 @@ from biom.parse import parse_biom_table
 import numpy
 import os
 import sys
-import pdb
+import pdb, traceback
 
 __author__ = "Calvin Morrison"
 __copyright__ = "Copyright 2013, EESI Lab"
@@ -24,6 +24,24 @@ def save_discrete_mapping(discrete_file, filetype, obs_dic):
 			for m in obs_dic.keys():
 				for i in obs_dic[m].items():
 					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
+
+def create_discrete_mapping(features_arr, header_arr, features_of_interest):
+	obs_dic = {}
+
+	# skip the "sample"
+	for f in range(1, len(header_arr)):
+		feature = header_arr[f]
+		print feature
+		if(features_of_interest[feature]['discrete'] == "D"):
+			i = 0
+			obs_dic[feature] = {}
+			for j in range(len(features_arr)):
+
+				obs = features_arr[j][f]
+				if(obs not in obs_dic[feature]):
+					obs_dic[feature][obs] = i
+					i = i + 1
+	return obs_dic
 
 def save_biom_matrix_csv(input_file, output_file):
 
@@ -58,7 +76,6 @@ def biom_table_to_array(biom_table):
 	data_matrix = [o for o in biom_table.iterObservationData()] 
 
 	return data_matrix, site_names, variable_names
-		
 
 
 def load_features_of_interest(foi_file):
@@ -84,7 +101,7 @@ def load_features_of_interest(foi_file):
 
 
 def load_data_dic(mapping_file):
-	missing_data_dic = {}
+	features_dic = {}
 
 	with open(mapping_file, 'r') as fh:
 		header_line = fh.readline()	
@@ -95,79 +112,80 @@ def load_data_dic(mapping_file):
 			columns = row[:-1].split("\t")
 			sample_name =	columns[0]
 
-			if sample_name not in missing_data_dic:
-				missing_data_dic[sample_name] = {}
+			if sample_name not in features_dic:
+				features_dic[sample_name] = {}
 
 			for i, col in enumerate(columns):
-				missing_data_dic[sample_name][headers[i]] = col
+				features_dic[sample_name][headers[i]] = col
 
-	return missing_data_dic
+	return features_dic
 
-def save_desired_features(input_mapping_file, input_foi_file, output_data_matrix_file, output_discrete_file):
-		features = {}
-		missing_data_dic = {}
-		data_array = []
-		obs_dic = {}
 
-		features = load_features_of_interest(input_foi_file)
-		missing_data_dic = load_data_dic(input_mapping_file)
-		pdb.set_trace()
+def save_desired_features(input_mapping_file, input_foi_file, output_data_matrix_file, output_discrete_file, filetype):
+		desired_features_arr = []
 
+		features_of_interest = load_features_of_interest(input_foi_file)
+		features_dic = load_data_dic(input_mapping_file)
 
 		# for each sample, add our desired data to an array
-		data_array.append([])
-		data_array[0].append("Sample")
-		for feature in features:
-			data_array[0].append(feature)
+		for x, sample in list(enumerate(features_dic.keys())):
+			desired_features_arr.append([])
+			desired_features_arr[x].append(sample)
 
-		for x, sample in list(enumerate(missing_data_dic.keys())):
-			data_array.append([])
-			data_array[x].append(sample)
-
-			# for each desired feature, add it from the missing_data_dictionary
-			for desired_feature in features.keys():
-				for sample_feature in missing_data_dic[sample].keys():
+			# for each desired feature, add it from the features_dictionary
+			for desired_feature in features_of_interest.keys():
+				for sample_feature in features_dic[sample].keys():
 
 					# if our feauture matches, parse it in
 					if sample_feature == desired_feature:
-						value = missing_data_dic[sample][sample_feature]
+						value = features_dic[sample][sample_feature]
 
-						if value.lower() == "none":
+						if value.lower() == "none" or value.lower() == 'nan':
 							value = None # types.NoneType. ?
-						elif desired_feature[2].lower() == "f":
+						elif features_of_interest[desired_feature]['type'].lower() == "f":
 							value = float(value)
-						elif desired_feature[2].lower() == "i":
+						elif features_of_interest[desired_feature]['type'].lower() == "i":
 							value = int(value)
+						elif features_of_interest[desired_feature]['type'].lower() == "t":
+							value = str(value)
+						else:
+							print "Unknown Type: " + features['type'] + " for " + desired_feature[0]
 					
-						data_array[x].append(value)
+						desired_features_arr[x].append(value)
 
-		# transpose our output array
-		data_array = map(list, zip(*data_array))
+		# create our header
+		desired_features_header = []
+		desired_features_header.append("Sample")
+		for feature in features_of_interest:
+			desired_features_header.append(feature)
 
-		# replace our value which are supposed to be discete with discrete values
-		for f, feature in list(enumerate(data_array[1:])):
-			if(features[feature[0]]['discrete'] == "discrete"):
+		# create our discrete mappings 
+		obs_dic = create_discrete_mapping(desired_features_arr, desired_features_header, features_of_interest)
 
-				obs_dic[feature[0]] = {}
-				i = 0
-				for obs in feature[1:]:
-					if(obs not in obs_dic[feature[0]]):
-						obs_dic[feature[0]][obs] = i
-						i = i + 1
-				for x in xrange(1,len(feature)):
-					if(feature[x] is not None):
-						feature[x] = obs_dic[feature[0]][feature[x]]
+		# convert requested variables into their discrete counterparts
+		desired_features_arr = map(list, zip(*desired_features_arr))
 
+		for f in range(1, len(desired_features_header)):
+			feature = desired_features_header[f]
+			if(features_of_interest[feature]['discrete'] == "D"):
+				for o in range(len(desired_features_arr[f])):
+					desired_features_arr[f][o] = obs_dic[feature][desired_features_arr[f][o]]
+
+		desired_features_arr = map(list, zip(*desired_features_arr))
+				
 		# write our observation dictionary out
-		
-		save_discrete_mapping(output_discrete_file, 'csv', obs_dic);
+		save_discrete_mapping(output_discrete_file, filetype, obs_dic);
 
-		data_array = map(list, zip(*data_array))
+		
 		with open(output_data_matrix_file, 'w') as fh:
-			for row in data_array:
+			for header in desired_features_header[:-1]:
+				fh.write(header + "\t")
+			fh.write(desired_features_header[-1] + "\n")
+				
+			for row in desired_features_arr:
 				for col in row[:-1]:
 					fh.write(str(col) + "\t")
-				fh.write(str(row[len(row) - 1]) + "\n")
+				fh.write(str(row[-1]) + "\n")
 
 def main():
 		parser = argparse.ArgumentParser(description = "")
@@ -189,9 +207,11 @@ def main():
 		save_desired_features(args.mapping_file,
 													args.feature_of_interest_file,
 													args.output_folder + "/desired_features.csv",
-													args.output_folder + "/discrete_feature_mapping.csv")
+													args.output_folder + "/discrete_feature_mapping.csv",
+													args.output_type)
 
 		save_biom_matrix_csv(args.biom_file, args.output_folder + "/data_matrix.csv")
+
 
 		# output our data matrix
 		# if args.output_type == "csv":
@@ -210,4 +230,9 @@ def main():
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+	try:
+		sys.exit(main())
+	except:
+		type, value, tb = sys.exc_info()
+		traceback.print_exc()
+		pdb.post_mortem(tb)
