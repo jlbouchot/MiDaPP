@@ -23,7 +23,7 @@ def save_missing_coordinates_csv(desired_data, output_file):
 		for i in range(len(desired_data)):	
 			for j in range(len(desired_data[0])):
 				if(desired_data[i][j] == None):
-					fh.write(str(i) + "\t" + str(j))
+					fh.write(str(i) + "\t" + str(j) + "\n")
 
 
 def save_discrete_mapping_csv(discrete_mapping_dic, output_file): 
@@ -45,9 +45,8 @@ def create_discrete_mapping(features_arr, header_arr, features_of_interest):
 			i = 0
 			obs_dic[feature] = {}
 			for j in range(len(features_arr)):
-
 				obs = features_arr[j][f]
-				if(obs not in obs_dic[feature]):
+				if(obs not in obs_dic[feature] and obs != None):
 					obs_dic[feature][obs] = i
 					i = i + 1
 	return obs_dic
@@ -188,7 +187,8 @@ def load_desired_features(features_of_interest, features_dic, output_folder):
 			feature = desired_features_header[f]
 			if(features_of_interest[feature]['discrete'] == "D"):
 				for o in range(len(desired_features_arr[f])):
-					desired_features_arr[f][o] = obs_dic[feature][desired_features_arr[f][o]]
+					if(desired_features_arr[f][o] != None):
+						desired_features_arr[f][o] = obs_dic[feature][desired_features_arr[f][o]]
 
 		desired_features_arr = map(list, zip(*desired_features_arr))
 				
@@ -213,6 +213,7 @@ def main():
 		args = parser.parse_args()
 
 		output_type = args.output_type.lower()
+		
 		# if our folder doesn't exist create it
 		if not os.path.isdir(args.output_folder):
 			os.mkdir(args.output_folder);
