@@ -16,14 +16,23 @@ __maintainer__ = "Calvin Morrison"
 __email__ = "mutantturkey@gmail.com"
 __status__ = "Development"
 
-def save_discrete_mapping(discrete_file, filetype, obs_dic): 
+output_type = ""
+
+def save_missing_coordinates_csv(desired_data, output_file): 
+	with open(output_file, 'w') as fh:
+		for i in range(len(desired_data)):	
+			for j in range(len(desired_data[0])):
+				if(desired_data[i][j] == None):
+					fh.write(str(i) + "\t" + str(j))
+
+
+def save_discrete_mapping_csv(discrete_mapping_dic, output_file): 
 	
-	if(filetype == 'csv'):
-		with open(discrete_file, 'w') as fh:
-			fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
-			for m in obs_dic.keys():
-				for i in obs_dic[m].items():
-					fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
+	with open(output_file, 'w') as fh:
+		fh.write("#KEY\tMAPPED_VAL\tORIGINAL_VAL\n")
+		for m in discrete_mapping_dic.keys():
+			for i in discrete_mapping_dic[m].items():
+				fh.write(m + "\t" + str(i[0]) + "\t" + str(i[1]) + "\n")
 
 def create_discrete_mapping(features_arr, header_arr, features_of_interest):
 	obs_dic = {}
@@ -97,6 +106,7 @@ def load_features_of_interest(foi_file):
 			features[feature_name] = {}
 			features[feature_name]['discrete'] = discrete_val
 			features[feature_name]['type'] = type_val 
+
 	return features
 
 
@@ -121,11 +131,20 @@ def load_data_dic(mapping_file):
 	return features_dic
 
 
-def save_desired_features(input_mapping_file, input_foi_file, output_data_matrix_file, output_discrete_file, filetype):
-		desired_features_arr = []
+		
+def save_desired_features_csv(headers, data, output_fn):
+	with open(output_fn, 'w') as fh:
+		for header in headers[:-1]:
+			fh.write(header + "\t")
+		fh.write(headers[-1] + "\n")
+			
+		for row in data:
+			for col in row[:-1]:
+				fh.write(str(col) + "\t")
+			fh.write(str(row[-1]) + "\n")
 
-		features_of_interest = load_features_of_interest(input_foi_file)
-		features_dic = load_data_dic(input_mapping_file)
+def load_desired_features(features_of_interest, features_dic, output_folder):
+		desired_features_arr = []
 
 		# for each sample, add our desired data to an array
 		for x, sample in list(enumerate(features_dic.keys())):
@@ -140,7 +159,7 @@ def save_desired_features(input_mapping_file, input_foi_file, output_data_matrix
 					if sample_feature == desired_feature:
 						value = features_dic[sample][sample_feature]
 
-						if value.lower() == "none" or value.lower() == 'nan':
+						if value.lower() == "none" or value.lower() == 'nan' or value.lower == "":
 							value = None # types.NoneType. ?
 						elif features_of_interest[desired_feature]['type'].lower() == "f":
 							value = float(value)
@@ -174,18 +193,9 @@ def save_desired_features(input_mapping_file, input_foi_file, output_data_matrix
 		desired_features_arr = map(list, zip(*desired_features_arr))
 				
 		# write our observation dictionary out
-		save_discrete_mapping(output_discrete_file, filetype, obs_dic);
+		save_discrete_mapping_csv(obs_dic, output_folder + "/discrete_mapping.csv");
 
-		
-		with open(output_data_matrix_file, 'w') as fh:
-			for header in desired_features_header[:-1]:
-				fh.write(header + "\t")
-			fh.write(desired_features_header[-1] + "\n")
-				
-			for row in desired_features_arr:
-				for col in row[:-1]:
-					fh.write(str(col) + "\t")
-				fh.write(str(row[-1]) + "\n")
+		return (desired_features_header, desired_features_arr)
 
 def main():
 		parser = argparse.ArgumentParser(description = "")
@@ -198,35 +208,26 @@ def main():
 		parser.add_argument("-o", "--output-folder", help="The folder to output our data to", required=True)
 		parser.add_argument("-t", "--output-type", help="data output format. default: CSV options: csv, matlab, r, numpy", default="csv", required=False)
 
+		global output_type
+
 		args = parser.parse_args()
 
+		output_type = args.output_type.lower()
 		# if our folder doesn't exist create it
 		if not os.path.isdir(args.output_folder):
 			os.mkdir(args.output_folder);
 
-		save_desired_features(args.mapping_file,
-													args.feature_of_interest_file,
-													args.output_folder + "/desired_features.csv",
-													args.output_folder + "/discrete_feature_mapping.csv",
-													args.output_type)
+		features_of_interest = load_features_of_interest(args.feature_of_interest_file)
+		features_dic = load_data_dic(args.mapping_file)
+		(desired_headers, desired_data) = load_desired_features(features_of_interest, features_dic, args.output_folder)
 
-		save_biom_matrix_csv(args.biom_file, args.output_folder + "/data_matrix.csv")
+		if(output_type == "csv"): 
+			save_desired_features_csv(desired_headers,
+																desired_data, 
+																args.output_folder + "/desired_features.csv")
 
-
-		# output our data matrix
-		# if args.output_type == "csv":
-		# 	numpy.savetxt(args.output_folder + "/biom_data_matrix.csv", data_matrix, delimiter="\t", fmt="%f")
-		# elif args.output_type == "numpy":
-		# 	numpy.save(args.output_folder + "/biom_data_matrix.npy", data_matrix, delimiter="\t")
-		# elif args.output_type == "matlab":
-		# 	import scipy.io
-		# 	dic = {}
-		# 	dic['matrix'] = data_matrix
-		# 	scipy.io.savemat(args.output_folder + "/biom_data_matrix.mat", dic)
-		# elif args.output_type == "r":
-		#  	print "R is unsupported"	
-		# else:
-		# 	print "unknown output type"
+			save_missing_coordinates_csv(desired_data, args.output_folder + "/missing_feature_coordinates.csv")
+			save_biom_matrix_csv(args.biom_file, args.output_folder + "/data_matrix.csv")
 
 
 if __name__ == "__main__":
