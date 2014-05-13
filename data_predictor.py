@@ -5,6 +5,7 @@ import sys # Useful for imports from different folders
 
 from biom.parse import parse_biom_table 
 from qiime.parse import parse_mapping_file_to_dict
+
 from sets import Set
 
 #sys.path.insert(0, '~/dev/emp-tests/tests/SparCCtb/lib')
@@ -20,6 +21,23 @@ __maintainer__ = "Jean-Luc Bouchot"
 __email__ = "jean-luc.bouchot@drexel.edu"
 __status__ = "Development"
 
+
+def parse_mapping_file_to_dict_alt(fh):
+		
+	header_line = fh.readline()	
+	headers = header_line[1:-1].split("\t")
+
+	dic = {}
+	for row in fh:
+		columns = row.split("\t")
+
+		for i, col in enumerate(columns):
+			if columns[0] not in dic:
+				dic[columns[0]] = {}
+			dic[columns[0]][headers[i]] = col 
+
+	return dic
+		
 
 def merge_matrices(data_matrix, env_table, site_names, site_names_env, variable_names, environmental_param):
 	"""
@@ -38,15 +56,9 @@ def merge_matrices(data_matrix, env_table, site_names, site_names_env, variable_
 	# Merge the two site name lists.
 	complete_sites = list(Set(site_names_env).intersection(Set(site_names)))
 	# Get the index sets useful for both matrices
-	idx_env = []
-	for a_name in complete_sites: # There must be a faster and neater way to do this, but I have no idea how (and don't want to look for)
-		idx_env.append(site_names_env.index(a_name))
-	idx_biom = []
-	for a_name in complete_sites:
-		idx_biom.append(site_names.index(a_name))
-
+	idx_env = [site_names_env.index(a_name) for a_name in complete_sites]
+	idx_biom = [site_names.index(a_name) for a_name in complete_sites]
 	# Extract AND ORDER submatrices with only the columns that are common to both of them 
-
 	# Merge these two submatrices
 	complete_matrix = numpy.vstack((data_matrix[:,idx_biom],env_table[:,idx_env])) # make sure the data type coincide
 	return complete_matrix, complete_sites, variable_names.extend(environmental_param)
@@ -63,34 +75,37 @@ def biom_table_to_array(biom_table):
 	site_names = list(biom_table.SampleIds)
 	variable_names = list(biom_table.ObservationIds)
 	data_matrix = [] # Maybe need to use a numpy.ndarray... Or we could have something like 
-	# data_matrix = numpy.ndarray((biom_table['shape'])) but don't know how to use this.
-	for one_observation in biom_table.iterObservationData(): # Observations correspond to what we call variables or features (is that true?)
-		data_matrix.append(one_observation)
-
+	data_matrix = [o for o in biom_table.iterObservationData()] 
 	return numpy.array(data_matrix), site_names, variable_names
 		
 
 
 def read_environment_table(map_fhandler, foi_fhandler):
 	"""
-		read_environment_table(map_fname, foi_fname)
+
 		@map_fhandler - file handler to the mapping .txt tab delimited file
-		@foi_fhandler - file handler to the tab delimited text file containing two columns: the first one contains the keys to the important environmental factors, and the second column contains whether the variables is continuous (e.g. temperature) or discrete (male/female)
+
+		@foi_fhandler - file handler to the tab delimited text file containing two
+		columns: the first one contains the keys to the important environmental
+		factors, and the second column contains whether the variables is continuous
+		(e.g. temperature) or discrete (male/female)
+
 		@data_matrix (return) - dense matrix containing both OTU/k-mer data AND environmental data
 		@site_names (return) - names of the different samples
 		@environmental_param (return) - names of the environmental parameters (as used in the foi_fname)
 		@is_continuous (return) - vector containing whether a particular foi is continuous or not
 		@hashtable_env (return) - correspondences between discrete variables and class affected (for instance male->1, female->0)
 	"""
-	obj, comm = parse_mapping_file_to_dict(map_fhandler)
 
+	obj, comm = parse_mapping_file_to_dict(map_fhandler)
 
 	site_names = obj.rowKeys()
 	environmental_param_ = []
 	is_continuous = []
 	data_types = []
 	for a_line in foi_fhandler:
-		param_name, param_type, data_type = a_line.split("\t") # /!\ Should check that we actually have two tabs (for nice software engineering)
+		# /!\ Should check that we actually have two tabs (for nice software engineering)
+		param_name, param_type, data_type = a_line.split("\t") 
 		environmental_param_.append(param_name)
 		is_continuous.append(param_type.lower() == "c") # Here again some better check should be done (tolerate 'continuous', 'c', 'C', undefined?) or at least throw an exception
 		data_types.append(data_type)
