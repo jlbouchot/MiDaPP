@@ -1,0 +1,3 @@
+# This script predicts the DIET_TYPE parameter from the map file using an MIM criterion. It is restricted to the fecal samples (via the -f -g options). The -d options specifies which output values are of interest (in this case, it contains all the different known values, getting rid of None or N/A or such) 
+
+python consistency_testing.py -d Omnivore -d Vegan -d Vegetarian -d "Vegetarian but eat seafood" -d "Omnivore but no red meat" -b pathToDataset/AG_100nt.biom -c DIET_TYPE -o ./oneloop/americangut-diet-mim-All/ -j mim -p 50 -q 250 -s 2 -m pathToDataset/AG_100nt.txt -f BODY_HABITAT -g UBERON:feces
