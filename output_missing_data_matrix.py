@@ -1,7 +1,7 @@
 #!/usr/bin/python
 
 import argparse
-from biom.parse import parse_biom_table 
+# from biom.parse import parse_biom_table 
 import numpy
 import os
 import sys
@@ -40,7 +40,6 @@ def create_discrete_mapping(features_arr, header_arr, features_of_interest):
 	# skip the "sample"
 	for f in range(1, len(header_arr)):
 		feature = header_arr[f]
-		print feature
 		if(features_of_interest[feature]['discrete'] == "D"):
 			i = 0
 			obs_dic[feature] = {}
