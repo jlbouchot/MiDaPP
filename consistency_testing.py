@@ -152,7 +152,7 @@ def test_accuracies(biom_matrix, labels, site_names, otu_ids, cur_folder, nb_fea
 		otu_fold_nb = 0
 		
 		
-		for otu_fold_nb in xrange(0,k_fold):
+		for otu_fold_nb in xrange(0,nb_rdm_tests):
 			
 			# Read the elements in the test sets
 			test_set_fname = os.path.join(cur_folder, 'samples_fold' + str(otu_fold_nb) + '.txt')
@@ -231,18 +231,14 @@ def get_consistencies(set_sizes, larger_set_size, nb_tests, output_folder):
 	for one_set_size in set_sizes:
 	
 		consistencies = []
-		print 'Consistencies with set size ' + str(one_set_size)
 	
-		# avg_consistency[one_set_size] = 0
-		# max_consistency[one_set_size] = 0
-		# min_consistency[one_set_size] = 10000
-		
+	
 		tests_considered = 0; # The grand total should be nfold*nb_tests*(nfold*nb_tests-1)/2
 		# look up in the containing folder 
 		# files are in for instance in tmp/n150/rdmtest1/otus_fold2.txt
 		for one_fold in range(0,nb_tests-1):
 			# open this file and look at the consistency with all the other tests of that size
-			path_to_file_a = os.path.join(output_folder, 'tmp', 'n'+str(one_set_size))
+			path_to_file_a = os.path.join(output_folder, 'tmp')
 			fname_a =  'otu_fold' + str(one_fold) + '.txt'
 			
 			# print 'list A taken from: ' + os.path.join(path_to_file_a, fname_a)
@@ -261,7 +257,7 @@ def get_consistencies(set_sizes, larger_set_size, nb_tests, output_folder):
 			for another_rdm_test in range(one_fold+1,nb_tests):
 				# /!\ Define list_b here
 				path_to_file_b = os.path.join(output_folder, 'tmp')
-				fname_b =  'n'+str(one_set_size) + 'otu_fold' + str(another_rdm_test) + '.txt'
+				fname_b =  'otu_fold' + str(another_rdm_test) + '.txt'
 				
 				# print 'list B taken from: ' + os.path.join(path_to_file_b, fname_b)
 				
@@ -275,7 +271,7 @@ def get_consistencies(set_sizes, larger_set_size, nb_tests, output_folder):
 				
 				
 				
-				cur_consistency = consistency(list_a, list_b, larger_set_size)
+				cur_consistency = consistency(list_a[0:one_set_size], list_b[0:one_set_size], larger_set_size)
 				consistencies.append(cur_consistency)
 				# max_consistency[one_set_size] = np.max([max_consistency[one_set_size],cur_consistency])
 				# min_consistency[one_set_size] = np.min([min_consistency[one_set_size],cur_consistency])
@@ -285,7 +281,6 @@ def get_consistencies(set_sizes, larger_set_size, nb_tests, output_folder):
 		avg_consistency[one_set_size] = sum(consistencies)/float(len(consistencies))
 		max_consistency[one_set_size] = max(consistencies)
 		min_consistency[one_set_size] = min(consistencies)
-		print consistencies
 		std_consistency[one_set_size] = np.std(np.array(consistencies))
 		# max_consistency[one_set_size] = max_consistency[one_set_size]
 		# min_consistency[one_set_size] = min_consistency[one_set_size]
@@ -318,7 +313,6 @@ def get_accuracies(set_sizes, larger_set_size, nb_tests, output_folder):
 		# avg_accuracy[one_set_size] = 0
 		# max_accuracy[one_set_size] = 0
 		# min_accuracy[one_set_size] = 10000
-		print 'Accuracies for a set size of ' + str(one_set_size)
 		
 		acc_g = []
 		acc_nb = []
